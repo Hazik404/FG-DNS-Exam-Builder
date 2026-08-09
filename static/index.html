@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FGEI Multi-Format Exam Generator</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Safe MathJax CDN (Polyfill.io removed) -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { background-color: #f8f9fa; padding-bottom: 60px; }
+        .card { margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .or-box { background-color: #f1f3f5; border-left: 3px solid #0d6efd; padding: 10px; margin-top: 8px; border-radius: 4px; }
+        .math-toolbar-btn { font-size: 0.8rem; padding: 2px 8px; }
+        .formula-chip { cursor: pointer; font-family: monospace; font-size: 0.85rem; }
+        .formula-chip:hover { background-color: #e9ecef; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>FGEI Multi-Format Exam Generator</h2>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mathHelpModal">
+            Math / LaTeX Syntax Guide & Live Builder
+        </button>
+    </div>
+
+    <form id="examForm">
+        <!-- Paper Metadata -->
+        <div class="card">
+            <div class="card-header bg-primary text-white fw-bold">Paper Information</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">School Name</label>
+                        <input type="text" id="school_name" class="form-control" value="FG Public School" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Exam Title</label>
+                        <input type="text" id="exam_title" class="form-control" value="Send-Up Examination 2026" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Subject</label>
+                        <input type="text" id="subject" class="form-control" value="Mathematics" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Grade / Class</label>
+                        <input type="text" id="grade" class="form-control" value="Class 10" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Time Allowed</label>
+                        <input type="text" id="time_allowed" class="form-control" value="2 Hours 30 Mins" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Total Marks</label>
+                        <input type="number" id="total_marks" class="form-control" value="75" required>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="is_board_pattern">
+                            <label class="form-check-label" for="is_board_pattern">
+                                Force Board Pattern (OMR Section A & 5x1 Subjective Layout)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="is_urdu_paper">
+                            <label class="form-check-label" for="is_urdu_paper">
+                                Urdu Medium Paper (RTL)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section A: MCQs -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center fw-bold">
+                <span>Section A: Multiple Choice Questions (MCQs)</span>
+                <button type="button" class="btn btn-sm btn-light" onclick="addMCQ()">+ Add MCQ</button>
+            </div>
+            <div class="card-body" id="mcqContainer"></div>
+        </div>
+
+        <!-- Section B: Short Questions -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center fw-bold">
+                <span>Section B: Short Questions (Supports OR / Choice Fields for 5x1 Table)</span>
+                <button type="button" class="btn btn-sm btn-light" onclick="addShortQuestion()">+ Add Short Question</button>
+            </div>
+            <div class="card-body" id="shortQContainer"></div>
+        </div>
+
+        <!-- Section C: Long Questions -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center fw-bold">
+                <span>Section C: Detailed / Long Questions (Supports OR / Choice Fields for 5x1 Table)</span>
+                <button type="button" class="btn btn-sm btn-light" onclick="addLongQuestion()">+ Add Long Question</button>
+            </div>
+            <div class="card-body" id="longQContainer"></div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-success btn-lg px-5">Generate & Download .docx Paper</button>
+        </div>
+    </form>
+</div>
+
+<!-- Math / LaTeX Builder & Helper Modal -->
+<div class="modal fade" id="mathHelpModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Custom Math & LaTeX Formula Builder</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">You can type any valid custom LaTeX command directly into any question or option input box. The Word generator converts LaTeX symbols (prefixed with <code>\</code>) into native Microsoft Word OMML equations.</p>
+        
+        <div class="mb-3">
+            <label class="form-label fw-bold">Live Formula Preview Builder</label>
+            <input type="text" id="latexPreviewInput" class="form-control" placeholder="Type custom LaTeX here e.g. \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" oninput="updateMathPreview()">
+            <div class="p-3 border rounded mt-2 bg-white text-center" style="min-height: 60px;" id="mathPreviewBox">
+                \( \text{Your rendered math will display here} \)
+            </div>
+        </div>
+
+        <hr>
+        <h6>Common LaTeX Command Examples</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Math Type</th>
+                        <th>LaTeX Code (Type directly into input fields)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Fractions</td><td><code>\frac{numerator}{denominator}</code></td></tr>
+                    <tr><td>Roots</td><td><code>\sqrt{x}</code> or <code>\sqrt[n]{x}</code></td></tr>
+                    <tr><td>Sub / Superscripts</td><td><code>x_{i}^{2}</code> or <code>x^2</code></td></tr>
+                    <tr><td>Integrals & Sums</td><td><code>\int_{a}^{b} f(x) dx</code> or <code>\sum_{i=1}^{n} i</code></td></tr>
+                    <tr><td>Trigonometry</td><td><code>\sin(\theta) + \cos(\theta) = 1</code></td></tr>
+                    <tr><td>Matrices</td><td><code>\begin{matrix} a & b \\ c & d \end{matrix}</code></td></tr>
+                    <tr><td>Greek Letters</td><td><code>\alpha, \beta, \gamma, \theta, \pi, \Delta</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function updateMathPreview() {
+        const val = document.getElementById('latexPreviewInput').value;
+        const box = document.getElementById('mathPreviewBox');
+        if (!val.trim()) {
+            box.innerHTML = '\\( \\text{Your rendered math will display here} \\)';
+        } else {
+            box.innerHTML = `\\( ${val} \\)`;
+        }
+        if (window.MathJax) {
+            MathJax.typesetPromise([box]);
+        }
+    }
+
+    let mcqCount = 0;
+    function addMCQ() {
+        mcqCount++;
+        const id = `mcq_${mcqCount}`;
+        const html = `
+            <div class="border p-3 mb-3 bg-white rounded position-relative" id="${id}">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-2" onclick="document.getElementById('${id}').remove()"></button>
+                <h6>MCQ #${mcqCount}</h6>
+                <div class="mb-2">
+                    <label class="form-label">Question Text (Supports freeform text & LaTeX)</label>
+                    <input type="text" class="form-control mcq-text" placeholder="e.g. Find the roots of \\frac{d}{dx}(x^2) = 0">
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label">Option A</label>
+                        <input type="text" class="form-control mcq-opt" placeholder="e.g. \\frac{1}{2}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Option B</label>
+                        <input type="text" class="form-control mcq-opt" placeholder="e.g. \\sqrt{2}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Option C</label>
+                        <input type="text" class="form-control mcq-opt" placeholder="e.g. x^2 + 1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Option D</label>
+                        <input type="text" class="form-control mcq-opt" placeholder="e.g. \\infty">
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('mcqContainer').insertAdjacentHTML('beforeend', html);
+    }
+
+    let sqCount = 0;
+    function addShortQuestion() {
+        sqCount++;
+        const id = `sq_${sqCount}`;
+        const html = `
+            <div class="border p-3 mb-3 bg-white rounded position-relative" id="${id}">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-2" onclick="document.getElementById('${id}').remove()"></button>
+                <div class="row">
+                    <div class="col-md-10">
+                        <label class="form-label">Main Short Question</label>
+                        <input type="text" class="form-control sq-main" placeholder="e.g. State and prove \\sin^2\\theta + \\cos^2\\theta = 1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Marks</label>
+                        <input type="number" class="form-control sq-marks" value="3">
+                    </div>
+                </div>
+                <div class="or-box">
+                    <label class="form-label text-primary fw-bold">OR Choice Question (Optional - Generates 5x1 Table Entry)</label>
+                    <input type="text" class="form-control sq-or" placeholder="e.g. Evaluate \\int_{0}^{\\pi} \\sin(x) dx">
+                </div>
+            </div>
+        `;
+        document.getElementById('shortQContainer').insertAdjacentHTML('beforeend', html);
+    }
+
+    let lqCount = 0;
+    function addLongQuestion() {
+        lqCount++;
+        const id = `lq_${lqCount}`;
+        const html = `
+            <div class="border p-3 mb-3 bg-white rounded position-relative" id="${id}">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-2" onclick="document.getElementById('${id}').remove()"></button>
+                <div class="row">
+                    <div class="col-md-10">
+                        <label class="form-label">Main Detailed Question</label>
+                        <input type="text" class="form-control lq-main" placeholder="e.g. Solve the system using Cramer's Rule: \\begin{matrix} 2x + y = 5 \\\\ x - 3y = 2 \\end{matrix}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Marks</label>
+                        <input type="number" class="form-control lq-marks" value="6">
+                    </div>
+                </div>
+                <div class="or-box">
+                    <label class="form-label text-primary fw-bold">OR Choice Question (Optional - Generates 5x1 Table Entry)</label>
+                    <input type="text" class="form-control lq-or" placeholder="Alternative question text with math...">
+                </div>
+            </div>
+        `;
+        document.getElementById('longQContainer').insertAdjacentHTML('beforeend', html);
+    }
+
+    // Initialize with standard empty fields
+    addMCQ();
+    addShortQuestion();
+    addLongQuestion();
+
+    document.getElementById('examForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const mcqs = [];
+        document.querySelectorAll('#mcqContainer > div').forEach(el => {
+            const text = el.querySelector('.mcq-text').value;
+            const opts = Array.from(el.querySelectorAll('.mcq-opt')).map(input => input.value);
+            if (text.trim()) {
+                mcqs.push({ text: text, options: opts });
+            }
+        });
+
+        const short_questions = [];
+        document.querySelectorAll('#shortQContainer > div').forEach(el => {
+            const main = el.querySelector('.sq-main').value;
+            const or = el.querySelector('.sq-or').value;
+            const marks = parseInt(el.querySelector('.sq-marks').value) || 3;
+            if (main.trim()) {
+                short_questions.push({ main_question: main, or_question: or || null, marks: marks });
+            }
+        });
+
+        const long_questions = [];
+        document.querySelectorAll('#longQContainer > div').forEach(el => {
+            const main = el.querySelector('.lq-main').value;
+            const or = el.querySelector('.lq-or').value;
+            const marks = parseInt(el.querySelector('.lq-marks').value) || 6;
+            if (main.trim()) {
+                long_questions.push({ main_question: main, or_question: or || null, marks: marks });
+            }
+        });
+
+        const payload = {
+            school_name: document.getElementById('school_name').value,
+            exam_title: document.getElementById('exam_title').value,
+            subject: document.getElementById('subject').value,
+            grade: document.getElementById('grade').value,
+            time_allowed: document.getElementById('time_allowed').value,
+            total_marks: parseInt(document.getElementById('total_marks').value),
+            is_board_pattern: document.getElementById('is_board_pattern').checked,
+            is_urdu_paper: document.getElementById('is_urdu_paper').checked,
+            mcqs: mcqs,
+            short_questions: short_questions,
+            long_questions: long_questions
+        };
+
+        try {
+            const res = await fetch('/generate-paper', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error('Failed to generate paper');
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${payload.subject}_${payload.grade}_Exam.docx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (err) {
+            alert('Error generating document: ' + err.message);
+        }
+    });
+</script>
+</body>
+</html>
