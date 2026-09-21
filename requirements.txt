@@ -3,3 +3,5 @@ uvicorn
 python-docx
 jinja2
 python-multipart
+latex2mathml
+lxml
